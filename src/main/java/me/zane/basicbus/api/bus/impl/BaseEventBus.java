@@ -36,8 +36,10 @@ public final class BaseEventBus implements Bus {
         }
     }
 
-    /*
-     * @param
+    /**
+     * @param listener A {@link IListener} is a type that allows the usage of the {@link Listener} annotation on methods when implemented.
+     *                 Subscribing a listener will allow it to be "heard" by the {@link Bus} and allow the method(s) annotated with {@link Listener}
+     *                 to be invoked when the Object specified by {@link Listener#value()} is published via {@link Bus#publish(Object)}
      */
     @Override
     public void subscribe(IListener listener) {
