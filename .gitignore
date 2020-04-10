@@ -32,3 +32,11 @@ gradle/wrapper/gradle-wrapper.jar
 gradle/wrapper/gradle-wrapper.properties
 .idea/vcs.xml
 .idea/workspace.xml
+build/classes/java/test/me/zane/basicbus/impl/benchmarks/Test.class
+build/classes/java/test/me/zane/basicbus/impl/benchmarks/Subscriber.class
+build/classes/java/test/me/zane/basicbus/impl/benchmarks/impl/SubscribeUnsubscribeTest.class
+build/classes/java/test/me/zane/basicbus/impl/benchmarks/impl/PublishStringTest.class
+build/classes/java/test/me/zane/basicbus/impl/benchmarks/Event.class
+build/classes/java/main/me/zane/basicbus/api/event/Event.class
+.idea/uiDesigner.xml
+.idea/compiler.xml

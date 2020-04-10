@@ -2,7 +2,9 @@ package me.zane.basicbus.api.bus;
 
 public interface Bus {
 
-    void subscribe(IListener listener);
+    void subscribe(Object listener);
 
-    void publish(Object object);
+    void unsubscribe(Object listener);
+
+    void publish(Object event);
 }

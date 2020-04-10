@@ -2,48 +2,22 @@ package me.zane.basicbus.api.bus.impl;
 
 import me.zane.basicbus.api.annotation.Listener;
 import me.zane.basicbus.api.bus.Bus;
-import me.zane.basicbus.api.bus.IListener;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class BaseEventBus implements Bus {
 
-    public final Map<Class<?>, List<CallLocation>> eventRegistry = new HashMap<>();
+    private final ConcurrentHashMap<Object, ConcurrentHashMap<Class<?>, List<CallLocation>>> subscriberMethodRegistry = new ConcurrentHashMap<>();
 
     @Override
-    public final void publish(Object object) {
-        for (Class<?> eventClass : eventRegistry.keySet()) {
-            final Class<?> clazz = object.getClass();
-            if (clazz == eventClass) {
-                for (CallLocation callLocation : eventRegistry.get(clazz)) {
-                    if (callLocation.listener.isActive()) {
-                        final Method method = callLocation.call;
-
-                        try {
-                            if (method.getParameterCount() == 1) {
-                                method.invoke(callLocation.listener, object);
-                            } else {
-                                method.invoke(callLocation.listener);
-                            }
-                        } catch (IllegalAccessException | InvocationTargetException ignored) {
-
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * @param listener A {@link IListener} is a type that allows the usage of the {@link Listener} annotation on methods when implemented.
-     *                 Subscribing a listener will allow it to be "heard" by the {@link Bus} and allow the method(s) annotated with {@link Listener}
-     *                 to be invoked when the Object specified by {@link Listener#value()} is published via {@link Bus#publish(Object)}
-     */
-    @Override
-    public void subscribe(IListener listener) {
-        for (final Method method : listener.getClass().getDeclaredMethods()) {
+    public void subscribe(Object listener) {
+        final ConcurrentHashMap<Class<?>, List<CallLocation>> classCallLocationMap = new ConcurrentHashMap<>();
+        for (int i = listener.getClass().getDeclaredMethods().length - 1; i >= 0; i--) {
+            final Method method = listener.getClass().getDeclaredMethods()[i];
             if (method.isAnnotationPresent(Listener.class) && (method.getParameterCount() == 0 || method.getParameterCount() == 1)) {
                 if (!method.isAccessible()) {
                     method.setAccessible(true);
@@ -57,33 +31,64 @@ public final class BaseEventBus implements Bus {
                     }
                 }
 
-                if (eventRegistry.containsKey(eventClass)) {
-                    eventRegistry.get(eventClass).add(new CallLocation(listener, method));
+                if (subscriberMethodRegistry.containsKey(eventClass)) {
+                    classCallLocationMap.get(eventClass).add(new CallLocation(listener, method));
                 } else {
-                    eventRegistry.put(eventClass, Collections.singletonList(new CallLocation(listener, method)));
+                    classCallLocationMap.put(eventClass, Collections.singletonList(new CallLocation(listener, method)));
+                }
+            }
+        }
+
+        if (subscriberMethodRegistry.containsKey(listener)) {
+            subscriberMethodRegistry.get(listener).putAll(classCallLocationMap);
+        } else {
+            subscriberMethodRegistry.put(listener, classCallLocationMap);
+        }
+    }
+
+    @Override
+    public void unsubscribe(Object subscriber) {
+        subscriberMethodRegistry.remove(subscriber);
+    }
+
+    @Override
+    public final void publish(Object event) {
+        for (final ConcurrentHashMap<Class<?>, List<CallLocation>> classCallLocationMap : subscriberMethodRegistry.values()) {
+            for (Class<?> eventClass : classCallLocationMap.keySet()) {
+                final Class<?> clazz = event.getClass();
+                if (clazz == eventClass) {
+                    for (final CallLocation callLocation : classCallLocationMap.get(eventClass)) {
+                        final Method method = callLocation.call;
+                        try {
+                            if (method.getParameterCount() == 1) {
+                                method.invoke(callLocation.subscriber, event);
+                            } else {
+                                method.invoke(callLocation.subscriber);
+                            }
+                        } catch (IllegalAccessException | InvocationTargetException ignored) {
+
+                        }
+                    }
                 }
             }
         }
     }
 
+
     private class CallLocation {
 
-        private final IListener listener;
+        private final Object subscriber;
         private final Method call;
 
-        public CallLocation(IListener listener, Method call) {
-            this.listener = listener;
+        public CallLocation(Object subscriber, Method call) {
+            this.subscriber = subscriber;
             this.call = call;
         }
-
-        /*
-         * Used for debugging/testing
-         */
 
         @Override
         public String toString() {
             return "CallLocation {\n" +
-                    "   instance: " + listener.getClass().getCanonicalName() + "\n" +
+                    "   instance: " + subscriber.getClass().getCanonicalName() + "\n" +
                     "   call: " + call.getName() + "\n" +
                     '}';
         }
