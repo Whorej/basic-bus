@@ -3,72 +3,76 @@ package me.zane.basicbus.api.bus.impl;
 import me.zane.basicbus.api.annotation.Listener;
 import me.zane.basicbus.api.bus.Bus;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class BaseEventBus implements Bus {
 
-    private final ConcurrentHashMap<Object, ConcurrentHashMap<Class<?>, List<CallLocation>>> subscriberMethodRegistry = new ConcurrentHashMap<>();
+    private final Map<Class<?>, List<CallLocation>> eventClassMethodMap = new HashMap<>();
 
     @Override
-    public void subscribe(Object listener) {
-        final ConcurrentHashMap<Class<?>, List<CallLocation>> classCallLocationMap = new ConcurrentHashMap<>();
-        for (int i = listener.getClass().getDeclaredMethods().length - 1; i >= 0; i--) {
-            final Method method = listener.getClass().getDeclaredMethods()[i];
-            if (method.isAnnotationPresent(Listener.class) && (method.getParameterCount() == 0 || method.getParameterCount() == 1)) {
-                if (!method.isAccessible()) {
-                    method.setAccessible(true);
-                }
+    public void subscribe(Object subscriber) {
+        final Method[] methods = subscriber.getClass().getDeclaredMethods();
+        final Map<Class<?>, List<CallLocation>> eventClassMethodMapRef = eventClassMethodMap;
+        for (int i = methods.length - 1; i >= 0; i--) {
+            final Method method = methods[i];
+            final Listener listener = method.getAnnotation(Listener.class);
+            if (listener != null) {
+                final Class<?>[] params = method.getParameterTypes();
+                final int paramsLength = params.length;
+                if (paramsLength <= 1) {
+                    final Class<?> eventClass = listener.value();
 
-                final Class<?> eventClass = method.getAnnotation(Listener.class).value();
-
-                if (method.getParameterCount() == 1) {
-                    if (eventClass != method.getParameterTypes()[0]) {
+                    if (paramsLength == 1 && eventClass != params[0]) {
                         continue;
                     }
-                }
 
-                if (subscriberMethodRegistry.containsKey(eventClass)) {
-                    classCallLocationMap.get(eventClass).add(new CallLocation(listener, method));
-                } else {
-                    classCallLocationMap.put(eventClass, Collections.singletonList(new CallLocation(listener, method)));
+                    final CallLocation callLoc = new CallLocation(subscriber, method);
+
+                    if (eventClassMethodMapRef.containsKey(eventClass)) {
+                        eventClassMethodMapRef.get(eventClass).add(callLoc);
+                    } else {
+                        eventClassMethodMapRef.put(eventClass, new CopyOnWriteArrayList<>(Collections.singletonList(callLoc)));
+                    }
                 }
             }
-        }
-
-        if (subscriberMethodRegistry.containsKey(listener)) {
-            subscriberMethodRegistry.get(listener).putAll(classCallLocationMap);
-        } else {
-            subscriberMethodRegistry.put(listener, classCallLocationMap);
         }
     }
 
     @Override
     public void unsubscribe(Object subscriber) {
-        subscriberMethodRegistry.remove(subscriber);
+        final Map<Class<?>, List<CallLocation>> eventClassMethodMapRef = eventClassMethodMap;
+        for (final List<CallLocation> callLocations : eventClassMethodMapRef.values()) {
+            for (final CallLocation callLocation : callLocations) {
+                if (callLocation.subscriber == subscriber) {
+                    callLocations.remove(callLocation);
+                }
+            }
+        }
     }
 
     @Override
     public final void publish(Object event) {
-        for (final ConcurrentHashMap<Class<?>, List<CallLocation>> classCallLocationMap : subscriberMethodRegistry.values()) {
-            for (Class<?> eventClass : classCallLocationMap.keySet()) {
-                final Class<?> clazz = event.getClass();
-                if (clazz == eventClass) {
-                    for (final CallLocation callLocation : classCallLocationMap.get(eventClass)) {
-                        final Method method = callLocation.call;
-                        try {
-                            if (method.getParameterCount() == 1) {
-                                method.invoke(callLocation.subscriber, event);
-                            } else {
-                                method.invoke(callLocation.subscriber);
-                            }
-                        } catch (IllegalAccessException | InvocationTargetException ignored) {
+        final List<CallLocation> callLocations = eventClassMethodMap.get(event.getClass());
+        if (callLocations != null) {
+            for (int callLocationsSize = callLocations.size(), i = 0; i < callLocationsSize; i++) {
+                final CallLocation callLocation = callLocations.get(i);
+                final Method method = callLocation.call;
 
-                        }
+                try {
+                    if (callLocation.noParams) {
+                        method.invoke(callLocation.subscriber);
+                    } else {
+                        method.invoke(callLocation.subscriber, event);
                     }
+                } catch (IllegalAccessException | InvocationTargetException ignored) {
+
                 }
             }
         }
@@ -79,10 +83,13 @@ public final class BaseEventBus implements Bus {
 
         private final Object subscriber;
         private final Method call;
+        private final boolean noParams;
 
         public CallLocation(Object subscriber, Method call) {
             this.subscriber = subscriber;
+            call.setAccessible(true);
             this.call = call;
+            noParams = call.getParameterCount() == 0;
         }
 
         @Override

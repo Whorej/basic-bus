@@ -9,14 +9,16 @@ public class SubscribeUnsubscribeTest implements Test {
     @Override
     public void test() {
         final BaseEventBus basicBus = new BaseEventBus();
-        long currentTime = System.nanoTime();
+        final long currentTime = System.currentTimeMillis();
 
-        for (long i = 0; i < iterations; i++) {
+        for (long i = iterations - 1; i >= 0; i--) {
             final Subscriber sub = new Subscriber();
             basicBus.subscribe(sub);
             basicBus.unsubscribe(sub);
         }
 
-        System.out.println("Subscribed and unsubscribed " + iterations + " Subscriber(s) in " + (System.nanoTime() - currentTime) * 1.0E-6D + "ms");
+        final long finalTime = System.currentTimeMillis();
+
+        System.out.println("Subscribed and unsubscribed " + iterations + " Subscriber(s) in " + (finalTime - currentTime) + "ms");
     }
 }

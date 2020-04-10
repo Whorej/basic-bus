@@ -12,7 +12,7 @@ public class PublishStringTest implements Test {
         final long currentTime = System.currentTimeMillis();
 
         for (long i = iterations - 1; i >= 0; i--) {
-            basicBus.publish(" ");
+            basicBus.publish(69);
         }
 
         final long finalTime = System.currentTimeMillis();
