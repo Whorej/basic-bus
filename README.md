@@ -5,8 +5,7 @@ basic-bus is a lightweight java event bus that uses the publish-subscribe naming
 
 ## Usage
 #### Instantiation
-To instantiate the event bus simply create an instance.
-<br>
+To instantiate the event bus simply create an instance with the constructor.
 ```java
 public final class SomeClass {
 
@@ -18,8 +17,8 @@ public final class SomeClass {
 }
 ```
 
-#### Subscribe a Listener
-To subscribe a listener firstly instantiate the event bus as shown above, then call the subscribe method with the listener you want to subscribe as the parameter.
+#### Subscribe a Subscriber
+To create a subscriber firstly instantiate the event bus as shown above, then call the subscribe method with the Object you want to subscribe as the parameter.
 ```java
 public final class SomeClass {
 
@@ -28,26 +27,43 @@ public final class SomeClass {
     public SomeClass() {
         basicBus = new BaseEventBus();
 
-        basicBus.subscribe(new SomeListener());
+        basicBus.subscribe(new SomeSubscriber());
     }
 }
 ```
 
-#### Use a Listener
-To use a listener it must implement the IListener interface (not to be confused with the Listener annotation) and it's method isActive() must return true.
+#### Use a Subscriber
+Once an Object is subscribed any method within it that is annotated with Listener and has either no parameters or one which is the same type as the specified class in the Listener annotation.
 ```java
-public final class SomeListener implements IListener {
+public final class SomeSubscriber {
 
     @Listener(SomeEvent.class)
     public final void onSomeEvent() {    
         System.out.println("SomeEvent was called.");   
     }
-    
-    @Override
-    public boolean isActive() {
-        return true;
-    }   
+
+    @Listener(SomeOtherEvent.class)
+    public final void onSomeOtherEvent(SomeOtherEvent event) {    
+        System.out.println(event.getSomeField());   
+    }
 
 }
 ```
-Alternatively you could change true to false and the listener would not be active. When the listener is not active the SomeEvent event will not be 'listened' for and therefore the onSomeEvent method will no be invoked.
+
+#### Publish an Event
+Once you have instantiated the event bus and subscribed a subscriber you may now start publishing events. To publish an event (any Object) simply:
+
+```java
+public final class SomeClass {
+
+    public final BaseEventBus basicBus;
+          
+    public SomeClass() {
+        basicBus = new BaseEventBus();
+
+        basicBus.subscribe(new SomeSubscriber());
+
+        basicBus.publish(new SomeClassConstructedEvent(this));
+    }
+}
+```

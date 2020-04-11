@@ -3,7 +3,6 @@ package me.zane.basicbus.impl.benchmarks.impl;
 import me.zane.basicbus.api.bus.impl.BaseEventBus;
 import me.zane.basicbus.impl.benchmarks.Subscriber;
 import me.zane.basicbus.impl.benchmarks.Test;
-import me.zane.basicbus.impl.benchmarks.event.Event;
 
 public class PublishStringTest implements Test {
 
