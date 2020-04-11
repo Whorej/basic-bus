@@ -49,7 +49,8 @@ public final class BaseEventBus implements Bus {
     public void unsubscribe(Object subscriber) {
         final Map<Class<?>, List<CallLocation>> eventClassMethodMapRef = eventClassMethodMap;
         for (final List<CallLocation> callLocations : eventClassMethodMapRef.values()) {
-            for (final CallLocation callLocation : callLocations) {
+            for (int i = 0, callLocationsSize = callLocations.size(); i < callLocationsSize; i++) {
+                CallLocation callLocation = callLocations.get(i);
                 if (callLocation.subscriber == subscriber) {
                     callLocations.remove(callLocation);
                 }
