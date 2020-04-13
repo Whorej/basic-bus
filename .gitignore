@@ -1,6 +1,9 @@
-gradle/wrapper/gradle-wrapper.jar
 *.class
 *.xml
 *.bin
 *.lock
 *.properties
+/build/
+/gradle/
+/.gradle/
+/.idea/

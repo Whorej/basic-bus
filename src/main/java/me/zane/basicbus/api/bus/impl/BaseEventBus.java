@@ -2,9 +2,8 @@ package me.zane.basicbus.api.bus.impl;
 
 import me.zane.basicbus.api.annotation.Listener;
 import me.zane.basicbus.api.bus.Bus;
+import me.zane.basicbus.api.invocation.Invoker;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,6 +14,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class BaseEventBus implements Bus {
 
     private final Map<Class<?>, List<CallLocation>> eventClassMethodMap = new HashMap<>();
+
+    private final Invoker invoker;
+
+    public BaseEventBus(Invoker invoker) {
+        this.invoker = invoker;
+    }
 
     @Override
     public void subscribe(Object subscriber) {
@@ -50,7 +55,7 @@ public final class BaseEventBus implements Bus {
         final Map<Class<?>, List<CallLocation>> eventClassMethodMapRef = eventClassMethodMap;
         for (final List<CallLocation> callLocations : eventClassMethodMapRef.values()) {
             for (int i = 0, callLocationsSize = callLocations.size(); i < callLocationsSize; i++) {
-                CallLocation callLocation = callLocations.get(i);
+                final CallLocation callLocation = callLocations.get(i);
                 if (callLocation.subscriber == subscriber) {
                     callLocations.remove(callLocation);
                 }
@@ -65,22 +70,19 @@ public final class BaseEventBus implements Bus {
             for (int callLocationsSize = callLocations.size(), i = 0; i < callLocationsSize; i++) {
                 final CallLocation callLocation = callLocations.get(i);
                 final Method method = callLocation.call;
+                final Object sub = callLocation.subscriber;
 
-                try {
-                    if (callLocation.noParams) {
-                        method.invoke(callLocation.subscriber);
-                    } else {
-                        method.invoke(callLocation.subscriber, event);
-                    }
-                } catch (IllegalAccessException | InvocationTargetException ignored) {
-
+                if (callLocation.noParams) {
+                    invoker.invoke(sub, method);
+                } else {
+                    invoker.invoke(sub, method, event);
                 }
             }
         }
     }
 
 
-    private class CallLocation {
+    private static class CallLocation {
 
         private final Object subscriber;
         private final Method call;
