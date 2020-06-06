@@ -1,10 +1,76 @@
 package me.zane.basicbus.api.bus;
 
-public interface Bus {
+import me.zane.basicbus.api.annotations.Listener;
 
-    void subscribe(Object subscriber);
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
-    void unsubscribe(Object subscriber);
+/**
+ * @since 1.4.0
+ */
 
-    void publish(Object event);
+public interface Bus <T> {
+
+    Map<Class<?>, List<Site>> map();
+
+    /**
+     * When an {@link Object} is subscribed any method annotated with {@link Listener} will be called
+     * when an instance of the class {@link Listener#value} is posted with {@link Bus#post}.
+     * @param subscriber {@link Object} to be subscribed
+     */
+    default void subscribe(Object subscriber) {
+        final Method[] ms = subscriber.getClass().getDeclaredMethods();
+        final Map<Class<?>, List<Site>> map = map();
+        for (final Method m : ms) {
+            final Listener l = m.getAnnotation(Listener.class);
+            if (l != null) {
+                final Class<?>[] p = m.getParameterTypes();
+                final int pl = p.length;
+                if (pl <= 1) {
+                    final Class<?> ec = l.value();
+                    if (pl == 1 && ec != p[0]) continue;
+                    final Site cl = new Site(subscriber, m);
+                    if (map.containsKey(ec)) map.get(ec).add(cl);
+                    else map.put(ec, new ArrayList<>(Collections.singletonList(cl)));
+                }
+            }
+        }
+    }
+
+    /**
+     * Once a subscriber has been unsubscribed any method annotated with {@link Listener} no longer
+     * will be called on {@link Bus#post}
+     * @param subscriber Any {@link Object} that has been subscribed using {@link Bus#subscribe}.
+     */
+    default void unsubscribe(Object subscriber) {
+        final Collection<List<Site>> cl = map().values();
+        for (List<Site> cls : cl) cls.removeIf(c -> c.s == subscriber);
+    }
+
+    /**
+     * @param event Any {@link T}, when {@code event} is posted it invokes all
+     *              methods annotated with {@link Listener} and with either 0 or 1 parameter(s),
+     *              if 1 parameter is present it must be of matching type as the class specified
+     *              in {@link Listener#value}. Only if an instance of the method's containing
+     *              class has been subscribed using {@link Bus#subscribe} will it be invoked.
+     */
+    default void post(T event) {
+        final List<Site> cls = map().get(event.getClass());
+        if (cls != null) {
+            for (int i = 0, s = cls.size(); i < s; i++) {
+                final Site cl = cls.get(i);
+                final Method m = cl.m;
+                final Object sub = cl.s;
+
+                try {
+                    if (cl.nP) {
+                        m.invoke(sub);
+                    } else {
+                        m.invoke(sub, event);
+                    }
+                } catch (IllegalAccessException | InvocationTargetException ignored) {}
+            }
+        }
+    }
 }

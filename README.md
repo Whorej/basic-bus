@@ -9,10 +9,10 @@ To instantiate the event bus simply create an instance with the constructor.
 ```java
 public final class SomeClass {
 
-    public final BaseEventBus basicBus;
+    public final Bus<String> messageBus;
           
     public SomeClass() {
-        basicBus = new BaseEventBus();
+        messageBus = new AsyncBus();
     }
 }
 ```
@@ -20,16 +20,7 @@ public final class SomeClass {
 #### Subscribe a Subscriber
 To create a subscriber firstly instantiate the event bus as shown above, then call the subscribe method with the Object you want to subscribe as the parameter.
 ```java
-public final class SomeClass {
-
-    public final BaseEventBus basicBus;
-          
-    public SomeClass() {
-        basicBus = new BaseEventBus();
-
-        basicBus.subscribe(new SomeSubscriber());
-    }
-}
+messageBus.subscribe(new SomeSubscriber());
 ```
 
 #### Use a Subscriber
@@ -37,33 +28,26 @@ Once an Object is subscribed any method within it that is annotated with Listene
 ```java
 public final class SomeSubscriber {
 
-    @Listener(SomeEvent.class)
-    public final void onSomeEvent() {    
-        System.out.println("SomeEvent was called.");   
+    // whatever type is specified in the type parameter
+    // can be used here (in the Listener annotation parameter) or a child class of that type
+    @Listener(String.class)
+    public final void onMessage() {
+        System.out.println("Some message was sent.");   
     }
 
-    @Listener(SomeOtherEvent.class)
-    public final void onSomeOtherEvent(SomeOtherEvent event) {    
-        System.out.println(event.getSomeField());   
+    @Listener(String.class)
+    public final void onMessage(String message) {
+        System.out.println("The message send was: " + message);   
     }
 
 }
 ```
 
 #### Publish an Event
-Once you have instantiated the event bus and subscribed a subscriber you may now start publishing events. To publish an event (any Object) simply:
+Once you have instantiated the event bus and subscribed a subscriber you may now start posting events. To post an event (any Object) simply:
 
 ```java
-public final class SomeClass {
-
-    public final BaseEventBus basicBus;
-          
-    public SomeClass() {
-        basicBus = new BaseEventBus();
-
-        basicBus.subscribe(new SomeSubscriber());
-
-        basicBus.publish(new SomeClassConstructedEvent(this));
-    }
-}
+// because of the String type parameter used when instantiating the Bus 
+// we can parse string literals as the generic paramter in post
+messageBus.post("Message that was sent");
 ```
