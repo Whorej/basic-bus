@@ -2,10 +2,9 @@ package me.zane.basicbus.api.annotations;
 
 import java.lang.annotation.*;
 
-
-
 /**
- * When a method in a subscribed class is annotated
+ * @see me.zane.basicbus.api.bus.Bus#subscribe
+ * @see me.zane.basicbus.api.bus.Bus#unsubscribe
  * @since 1.4.0
  */
 
