@@ -23,7 +23,7 @@ eventBus = new BusImpl();
 ```
 for an asynchronous implementation use:
 ```java
-asyncBus = new Async();
+asyncBus = new AsyncImpl();
 ```
 
 ### Subscribe a Subscriber
