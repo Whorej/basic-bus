@@ -19,11 +19,11 @@ dependencies {
 ### Instantiation
 To instantiate the event bus simply create an instance with the constructor.
 ```java
-eventBus = new BusImpl();
+Bus<String> eventBus = new BusImpl<>();
 ```
 for an asynchronous implementation use:
 ```java
-asyncBus = new AsyncImpl();
+Bus<String> asyncBus = new AsyncImpl<>();
 ```
 
 ### Subscribe a Subscriber
