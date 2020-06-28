@@ -12,7 +12,7 @@ import java.util.*;
 
 public interface Bus <T> {
 
-    Map<Class<?>, List<Site>> map();
+    Map<List<Class<?>>, List<Site>> map();
 
     /**
      * When an {@link Object} is subscribed any method annotated with {@link Listener} will be called
@@ -21,18 +21,26 @@ public interface Bus <T> {
      */
     default void subscribe(Object subscriber) {
         final Method[] ms = subscriber.getClass().getDeclaredMethods();
-        final Map<Class<?>, List<Site>> map = map();
+        final Map<List<Class<?>>, List<Site>> map = map();
         for (final Method m : ms) {
+            boolean a = false;
             final Listener l = m.getAnnotation(Listener.class);
             if (l != null) {
                 final Class<?>[] p = m.getParameterTypes();
                 final int pl = p.length;
-                if (pl <= 1) {
-                    final Class<?> ec = l.value();
-                    if (pl == 1 && ec != p[0]) continue;
+                final List<Class<?>> ecs = Arrays.asList(l.value());
+                if (pl <= ecs.size()) {
+                    for (int i = 0; i < pl; i++) {
+                        final Class<?> pa = p[i];
+                        if (!ecs.contains(pa)) {
+                            a = true;
+                            break;
+                        }
+                    }
+                    if (a) continue;
                     final Site cl = new Site(subscriber, m);
-                    if (map.containsKey(ec)) map.get(ec).add(cl);
-                    else map.put(ec, new ArrayList<>(Collections.singletonList(cl)));
+                    if (map.containsKey(ecs)) map.get(ecs).add(cl);
+                    else map.put(ecs, new ArrayList<>(Collections.singletonList(cl)));
                 }
             }
         }
@@ -56,7 +64,7 @@ public interface Bus <T> {
      *              class has been subscribed using {@link Bus#subscribe} will it be invoked.
      */
     default void post(T event) {
-        final List<Site> cls = map().get(event.getClass());
+        final List<Site> cls = map().get(Collections.singletonList(event.getClass()));
         if (cls != null) {
             for (int i = 0, s = cls.size(); i < s; i++) {
                 final Site cl = cls.get(i);

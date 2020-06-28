@@ -13,30 +13,30 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class AsyncBus<T> implements Bus<T> {
 
-    private final Map<Class<?>, List<Site>> map = new ConcurrentHashMap<>();
+    private final Map<List<Class<?>>, List<Site>> map = new ConcurrentHashMap<>();
 
     @Override
-    public Map<Class<?>, List<Site>> map() {
+    public Map<List<Class<?>>, List<Site>> map() {
         return map;
     }
 
-    @Override
-    public void subscribe(Object subscriber) {
-        final Method[] ms = subscriber.getClass().getDeclaredMethods();
-        final Map<Class<?>, List<Site>> map = this.map;
-        for (final Method m : ms) {
-            final Listener l = m.getAnnotation(Listener.class);
-            if (l != null) {
-                final Class<?>[] ps = m.getParameterTypes();
-                final int pl = ps.length;
-                if (pl <= 1) {
-                    final Class<?> clazz = l.value();
-                    if (pl == 1 && clazz != ps[0]) continue;
-                    final Site cl = new Site(subscriber, m);
-                    if (map.containsKey(clazz)) map.get(clazz).add(cl);
-                    else map.put(clazz, new CopyOnWriteArrayList<>(Collections.singletonList(cl)));
-                }
-            }
-        }
-    }
+//    @Override
+//    public void subscribe(Object subscriber) {
+//        final Method[] ms = subscriber.getClass().getDeclaredMethods();
+//        final Map<Class<?>, List<Site>> map = this.map;
+//        for (final Method m : ms) {
+//            final Listener l = m.getAnnotation(Listener.class);
+//            if (l != null) {
+//                final Class<?>[] ps = m.getParameterTypes();
+//                final int pl = ps.length;
+//                if (pl <= 1) {
+//                    final Class<?> c = l.value();
+//                    if (pl == 1 && c != ps[0]) continue;
+//                    final Site cl = new Site(subscriber, m);
+//                    if (map.containsKey(c)) map.get(c).add(cl);
+//                    else map.put(c, new CopyOnWriteArrayList<>(Collections.singletonList(cl)));
+//                }
+//            }
+//        }
+//    }
 }

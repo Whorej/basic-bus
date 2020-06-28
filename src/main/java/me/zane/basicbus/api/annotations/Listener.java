@@ -13,5 +13,5 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface Listener {
 
-    Class<?> value();
+    Class<?>[] value();
 }

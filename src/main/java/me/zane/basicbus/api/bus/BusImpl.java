@@ -10,10 +10,10 @@ import java.util.Map;
  */
 public final class BusImpl<T> implements Bus<T> {
 
-    private final Map<Class<?>, List<Site>> map = new HashMap<>();
+    private final Map<List<Class<?>>, List<Site>> map = new HashMap<>();
 
     @Override
-    public Map<Class<?>, List<Site>> map() {
+    public Map<List<Class<?>>, List<Site>> map() {
         return map;
     }
 }
