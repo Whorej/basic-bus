@@ -10,13 +10,14 @@ import java.util.*;
  * @since 1.4.0
  */
 
-public interface Bus <T> {
+public interface Bus<T> {
 
     Map<List<Class<?>>, List<Site>> map();
 
     /**
      * When an {@link Object} is subscribed any method annotated with {@link Listener} will be called
      * when an instance of the class {@link Listener#value} is posted with {@link Bus#post}.
+     *
      * @param subscriber {@link Object} to be subscribed
      */
     default void subscribe(Object subscriber) {
@@ -31,8 +32,7 @@ public interface Bus <T> {
                 final List<Class<?>> ecs = Arrays.asList(l.value());
                 if (pl <= ecs.size()) {
                     for (int i = 0; i < pl; i++) {
-                        final Class<?> pa = p[i];
-                        if (!ecs.contains(pa)) {
+                        if (!ecs.contains(p[i])) {
                             a = true;
                             break;
                         }
@@ -49,6 +49,7 @@ public interface Bus <T> {
     /**
      * Once a subscriber has been unsubscribed any method annotated with {@link Listener} no longer
      * will be called on {@link Bus#post}
+     *
      * @param subscriber Any {@link Object} that has been subscribed using {@link Bus#subscribe}.
      */
     default void unsubscribe(Object subscriber) {
@@ -66,18 +67,15 @@ public interface Bus <T> {
     default void post(T event) {
         final List<Site> cls = map().get(Collections.singletonList(event.getClass()));
         if (cls != null) {
-            for (int i = 0, s = cls.size(); i < s; i++) {
-                final Site cl = cls.get(i);
+            for (final Site cl : cls) {
                 final Method m = cl.m;
                 final Object sub = cl.s;
 
                 try {
-                    if (cl.nP) {
-                        m.invoke(sub);
-                    } else {
-                        m.invoke(sub, event);
-                    }
-                } catch (IllegalAccessException | InvocationTargetException ignored) {}
+                    if (cl.nP) m.invoke(sub);
+                    else m.invoke(sub, event);
+                } catch (IllegalAccessException | InvocationTargetException ignored) {
+                }
             }
         }
     }
