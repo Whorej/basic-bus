@@ -11,8 +11,8 @@ public final class PublishStringTest implements Test {
     @Override
     public void test() {
         final Bus<Event> basicBus = new BusImpl<>();
-        final long currentTime = System.currentTimeMillis();
         final Event e = new Event();
+        final long currentTime = System.currentTimeMillis();
 
         for (long i = iterations - 1; i >= 0; i--) {
             basicBus.post(e);

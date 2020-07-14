@@ -11,8 +11,8 @@ public final class SubscribeUnsubscribeTest implements Test {
     @Override
     public void test() {
         final Bus<Event> basicBus = new BusImpl<>();
-        final long currentTime = System.currentTimeMillis();
         final Subscriber sub = new Subscriber();
+        final long currentTime = System.currentTimeMillis();
 
         for (long i = iterations - 1; i >= 0; i--) {
             basicBus.subscribe(sub);

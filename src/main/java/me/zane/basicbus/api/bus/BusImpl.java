@@ -8,6 +8,7 @@ import java.util.*;
 
 /**
  * Default implementation of {@link Bus}.
+ *
  * @since 1.4.0
  */
 public final class BusImpl<T> implements Bus<T> {
@@ -18,6 +19,7 @@ public final class BusImpl<T> implements Bus<T> {
      * When an {@link Object} is subscribed, any method annotated with {@link Listener} will be called
      * if an instance of the class {@link Listener#value} is posted with {@link BusImpl#post}.
      * Note: Needs to be optimized is currently very slow in comparision to {@link BusImpl#post} and {@link BusImpl#unsubscribe}
+     *
      * @param subscriber {@link Object} to be subscribed
      */
     @Override
@@ -37,8 +39,9 @@ public final class BusImpl<T> implements Bus<T> {
                     final Site cl = new Site(subscriber, m);
                     // if the target event has had one of its subscribers subscribed before add to the existing ArrayList
                     if (map.containsKey(ecs)) map.get(ecs).add(cl);
-                        // else create a new single-element ArrayList
+                    // else create a new single-element ArrayList
                     else {
+                        // avoid new array creation
                         PLACEHOLDER[0] = cl;
                         // in the JDK ArrayList(E[] array) is package-private is it must be called via Arrays#asList
                         map.put(ecs, new ArrayList<>(Arrays.asList(PLACEHOLDER)));
@@ -51,6 +54,7 @@ public final class BusImpl<T> implements Bus<T> {
     /**
      * Once a subscriber has been unsubscribed any method annotated with {@link Listener} no longer
      * will be called on {@link BusImpl#post}
+     *
      * @param subscriber Any {@link Object} that has been subscribed using {@link BusImpl#subscribe}.
      */
     @Override
@@ -69,16 +73,14 @@ public final class BusImpl<T> implements Bus<T> {
     @Override
     public void post(T event) {
         final List<Site> cls = this.map.get(event.getClass());
-        if (cls != null) {
-            for (int i = 0, clsSize = cls.size(); i < clsSize; i++) {
+        if (cls != null) for (int i = 0, clsSize = cls.size(); i < clsSize; i++) {
+            try {
                 final Site cl = cls.get(i);
                 final Method m = cl.m;
                 final Object sub = cl.s;
-
-                try {
-                    if (cl.nP) m.invoke(sub);
-                    else m.invoke(sub, event);
-                } catch (IllegalAccessException | InvocationTargetException | IndexOutOfBoundsException ignored) {}
+                if (cl.nP) m.invoke(sub);
+                else m.invoke(sub, event);
+            } catch (IllegalAccessException | InvocationTargetException | IndexOutOfBoundsException ignored) {
             }
         }
     }

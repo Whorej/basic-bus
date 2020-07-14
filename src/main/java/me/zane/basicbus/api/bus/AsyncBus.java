@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * An asynchronous implementation of {@link Bus}.
+ *
  * @since 1.4.0
  */
 public final class AsyncBus<T> implements Bus<T> {
@@ -67,16 +68,15 @@ public final class AsyncBus<T> implements Bus<T> {
     @Override
     public void post(T event) {
         final CopyOnWriteArrayList<Site> cls = this.map.get(event.getClass());
-        if (cls != null) {
-            for (int i = 0, clsSize = cls.size(); i < clsSize; i++) {
+        if (cls != null) for (int i = 0, clsSize = cls.size(); i < clsSize; i++) {
+            try {
                 final Site cl = cls.get(i);
                 final Method m = cl.m;
                 final Object sub = cl.s;
 
-                try {
-                    if (cl.nP) m.invoke(sub);
-                    else m.invoke(sub, event);
-                } catch (IllegalAccessException | InvocationTargetException | IndexOutOfBoundsException ignored) {}
+                if (cl.nP) m.invoke(sub);
+                else m.invoke(sub, event);
+            } catch (IllegalAccessException | InvocationTargetException | IndexOutOfBoundsException ignored) {
             }
         }
     }
