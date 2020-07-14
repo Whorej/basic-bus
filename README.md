@@ -11,7 +11,7 @@ repositories {
 }
         
 dependencies {
-    implementation 'com.github.Whorej:basic-bus:1.5.2'
+    implementation 'com.github.Whorej:basic-bus:1.5.3'
 }
 ```
 
