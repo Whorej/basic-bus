@@ -67,15 +67,15 @@ public interface Bus<T> {
     default void post(T event) {
         final List<Site> cls = map().get(Collections.singletonList(event.getClass()));
         if (cls != null) {
-            for (final Site cl : cls) {
+            for (int i = 0, clsSize = cls.size(); i < clsSize; i++) {
+                final Site cl = cls.get(i);
                 final Method m = cl.m;
                 final Object sub = cl.s;
 
                 try {
                     if (cl.nP) m.invoke(sub);
                     else m.invoke(sub, event);
-                } catch (IllegalAccessException | InvocationTargetException ignored) {
-                }
+                } catch (IllegalAccessException | InvocationTargetException | IndexOutOfBoundsException ignored) {}
             }
         }
     }
