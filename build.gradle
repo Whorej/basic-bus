@@ -3,14 +3,4 @@ plugins {
 }
 
 group 'me.zane'
-version '1.5.2'
-
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-
-}
+version '1.5.3'
